@@ -1,5 +1,6 @@
 from django.shortcuts import render
 import random
+import uuid
 import logging
 from django.core.mail import send_mail
 from django.utils.timezone import now, timedelta
@@ -77,6 +78,7 @@ def forgot_password(request):
     data = request.data
     email = data.get('email')
 
+
     if not email:
         return Response({"error": "email is required"}, status=400)
     
@@ -85,22 +87,27 @@ def forgot_password(request):
     if not user:
         return Response({"error": "User not found or not verified"}, status=404)
     
+    recent_otp = OTP.objects.filter(user=user, created_at__gte=now() - timedelta(minutes=5)).first()
+    
+    if recent_otp:
+        return Response({'errro': "You can request OTP after 5 minutes"}, status=429)
  
     otp_code_new = random.randint(10000, 99999)
-    otp = OTP.objects.create(user=user, otp_code=otp_code_new)
+    otp_key_new = str(uuid.uuid4())
+    otp = OTP.objects.create(user=user, otp_code=otp_code_new, otp_key=otp_key_new)
     otp.save()
 
   
     send_otp_email(email, otp_code_new)
 
-    return Response({"message": "OTP code has been sent to your email"}, status=200)
+    return Response({"message": "OTP code has been sent to your email","otp_key":otp.otp_key}, status=200)
 
 
 logger = logging.getLogger(__name__)
 
 def send_otp_email(receiver_email, otp_code):
     subject = "Password Reset OTP Code"
-    message = f"Your OTP code is: {otp_code}\nThis code is valid for 10 minutes."
+    message = f"Your OTP code is: {otp_code}\nThis code is valid for 5 minutes."
     
     try:
         send_mail(
@@ -120,16 +127,16 @@ def send_otp_email(receiver_email, otp_code):
 def verify_otp(request):
     data = request.data
     otp_code = data.get('otp_code')
+    otp_key = data.get('otp_key')
 
-    if not otp_code:
-        return Response({"error":" otp_code are required"}, status=400)
+    if not otp_code or not otp_key:
+        return Response({"error":" otp_code and otp_key are required"}, status=400)
     
-    otp = OTP.objects.filter(otp_code=otp_code, created_at__gte=now()- timedelta(minutes=5)).first()
+    otp = OTP.objects.filter(otp_code=otp_code, otp_key__exact=otp_key, created_at__gte=now()- timedelta(minutes=5)).first()
 
     if not otp:
-        return Response({"error": "Invalid or expired OTP code"}, status=400)
+        return Response({"error": "Invalid or expired OTP code ot otp_key"}, status=400)
     
-    # otp_key = random.randint(100000, 999999)
     PasswordResetToken.objects.create(user=otp.user, otp_key=otp.otp_key)
 
     return Response({"otp_key": otp.otp_key}, status=200)
