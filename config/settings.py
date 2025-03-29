@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-_12!e!r(lqs(*9g4r6u4^$n!w($^9=r1^e@a+ti*(4_lw)c%^1
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 
 # Application definition
@@ -38,12 +38,14 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt',
     'authentication',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -141,6 +143,18 @@ SIMPLEJWT = {
 }
 
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173", 
+    "http://127.0.0.1:5173",  
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -150,3 +164,6 @@ EMAIL_USE_TLS = True  # TLS ni yoqish
 EMAIL_HOST_USER = 'abdumannofabdushukurov@gmail.com'  # Emailingiz
 EMAIL_HOST_PASSWORD = 'gvka nmjg iimf ijgu'  # Google App Password
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER  # Standart jo‘natuvchi
+
+
+
