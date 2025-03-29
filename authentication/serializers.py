@@ -19,13 +19,13 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         try:
              user = User.objects.get(username=username)
         except User.DoesNotExist:
-            raise serializers.ValidationError({"error": "Bunday foydalanuvchi mavjud emas!"})
+            raise serializers.ValidationError({"error": "Bunday foydalanuvchi mavjud emas!"}, status=404)
 
         if not check_password(password, user.password):
-            raise serializers.ValidationError({"error": "Parol notog'ri!"})
+            raise serializers.ValidationError({"error": "Parol notog'ri!"}, status=401)
         
         if not user.is_active:
-            raise serializers.ValidationError({"error": "Bu foydalanuvchi aktiv emas!"})
+            raise serializers.ValidationError({"error": "Bu foydalanuvchi aktiv emas!"}, status=200)
         
         return super().validate(attrs)
 
