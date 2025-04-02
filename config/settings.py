@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'authentication',
+    'EduResources',
+    'simulators',
 ]
 
 MIDDLEWARE = [
@@ -159,12 +161,12 @@ CSRF_TRUSTED_ORIGINS = [
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'  # Gmail SMTP serveri
-EMAIL_PORT = 587  # TLS uchun port
-EMAIL_USE_TLS = True  # TLS ni yoqish
-EMAIL_HOST_USER = 'abdumannofabdushukurov@gmail.com'  # Emailingiz
-EMAIL_HOST_PASSWORD = 'gvka nmjg iimf ijgu'  # Google App Password
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER  # Standart jo‘natuvchi
+EMAIL_HOST = 'smtp.gmail.com'  
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True  
+EMAIL_HOST_USER = 'abdumannofabdushukurov@gmail.com' 
+EMAIL_HOST_PASSWORD = 'gvka nmjg iimf ijgu'  
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER 
 
 
 

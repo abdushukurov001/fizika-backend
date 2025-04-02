@@ -7,7 +7,7 @@ from django.contrib.auth.hashers import check_password
 
 class OtpSerializer(serializers.ModelSerializer):
     class Meta:
-        model: OTP
+        model= OTP
         fields=["id", "otp_code", "otp_key"]
 
 
