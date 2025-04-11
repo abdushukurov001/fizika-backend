@@ -8,70 +8,97 @@ from .models import Classes, Lessons, Test, TestResult, TestStatistic
 from rest_framework import status
 
 
-
 class SubmitTestView(APIView):
     permission_classes = [IsAuthenticated]
-
+    
     def post(self, request):
         user = request.user
-        test_answers = request.data.get("answers", [])  
-
+        test_answers = request.data.get("answers", {})
+        lesson_id = request.data.get("lesson")
+        
+        if not lesson_id:
+            return Response({
+                "detail": "Dars ID (lesson) ko'rsatilmagan."
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check if user has already taken this specific lesson's test
+        if TestStatistic.objects.filter(user=user, lesson_id=lesson_id).exists():
+            return Response({
+                "detail": "Siz bu dars testini allaqachon topshirgansiz."
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
         correct_count = 0
         total_tests = len(test_answers)
         lesson = None
-
+        
         for test_id, selected_option in test_answers.items():
             try:
+                test_id = int(test_id)  # Ensure test_id is an integer
                 test = Test.objects.get(id=test_id)
-                lesson = test.resource  
+                
+                # Verify this test belongs to the specified lesson
+                if test.resource.id != int(lesson_id):
+                    continue
+                    
+                lesson = test.resource
                 is_correct = test.correct_option == selected_option
-
-               
-                test_result, created = TestResult.objects.update_or_create(
-                    user=user, test=test,
-                    defaults={"selected_option": selected_option, "is_correct": is_correct}
+                
+                # Create test result
+                TestResult.objects.create(
+                    user=user,
+                    test=test,
+                    selected_option=selected_option,
+                    is_correct=is_correct
                 )
-
+                
                 if is_correct:
                     correct_count += 1
-
+                    
             except Test.DoesNotExist:
                 continue
-
+            except ValueError:
+                continue
+        
+        # Save statistics
         if lesson:
-            test_statistic, created = TestStatistic.objects.get_or_create(user=user, lesson=lesson)
+            test_statistic, created = TestStatistic.objects.get_or_create(
+                user=user, lesson=lesson
+            )
             test_statistic.total_tests = total_tests
             test_statistic.correct_answers = correct_count
             test_statistic.update_percentage()
+            test_statistic.save()
+            
+            percentage = (correct_count / total_tests) * 100 if total_tests > 0 else 0
+            
+            return Response({
+                "message": "Test natijalari saqlandi!",
+                "total_tests": total_tests,
+                "correct_answers": correct_count,
+                "percentage": percentage
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                "detail": "Dars topilmadi yoki test javoblari noto'g'ri formatda."
+            }, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response({
-            "message": "Test natijalari saqlandi!",
-            "total_tests": total_tests,
-            "correct_answers": correct_count,
-            "percentage": (correct_count / total_tests) * 100 if total_tests > 0 else 0
-        })
-    
 
 class LessonTestResultView(APIView):
     permission_classes = [IsAuthenticated]
-
+    
     def get(self, request, lesson_id):
         user = request.user
         try:
-            lesson = Lessons.objects.get(id=lesson_id)
-        except Lessons.DoesNotExist:
-            return Response({"error": "Mavzu topilmadi."}, status=status.HTTP_404_NOT_FOUND)
-
-        statistic, created = TestStatistic.objects.get_or_create(user=user, lesson=lesson)
-
-        return Response({
-            "lesson": lesson.title,
-            "total_tests": statistic.total_tests,
-            "correct_answers": statistic.correct_answers,
-            "percentage": statistic.percentage
-        })
-
-
+            stat = TestStatistic.objects.get(user=user, lesson_id=lesson_id)
+            return Response({
+                "percentage": stat.percentage,
+                "correct_answers": stat.correct_answers,
+                "total_tests": stat.total_tests
+            }, status=status.HTTP_200_OK)
+        except TestStatistic.DoesNotExist:
+            return Response({
+                "detail": "Siz hali bu dars uchun test ishlamagansiz."
+            }, status=status.HTTP_404_NOT_FOUND)
 @api_view(['GET'])
 def ClassesView(request):
     classes = Classes.objects.all()

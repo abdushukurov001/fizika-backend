@@ -161,7 +161,7 @@ def reset_password(request):
     user.password = make_password(new_password)
     user.save()
 
-    token.delete()
+    # token.delete()
 
     return Response({"message": "Password changed successfully"}, status=200)
 

@@ -18,7 +18,7 @@ class Simulators(models.Model):
     description = models.TextField(max_length=300)
     image = models.ImageField(upload_to='simulator_img')
     link = models.URLField()
-    types = models.ManyToManyField(SimulatorType)
+    types = models.ForeignKey(SimulatorType, on_delete=models.PROTECT)
     categories = models.ManyToManyField(SimulatorCategory)
     
     def __str__(self):
