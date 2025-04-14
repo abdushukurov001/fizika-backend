@@ -1,88 +1,54 @@
 from django.shortcuts import render
-from .serializers import ClassesSerializers, LessonsSerializer
+from .serializers import ClassesSerializers, LessonsSerializer,TestResultSerializer, TestStatisticSerializer
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from .models import Classes, Lessons, Test, TestResult, TestStatistic
-from rest_framework import status
+from rest_framework import status, generics
 
 
-class SubmitTestView(APIView):
+
+
+class LessonTestResultsView(generics.ListAPIView):
+    serializer_class = TestResultSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = TestResult.objects.all()
+        lesson_id = self.request.query_params.get('lesson_id')
+
+        if lesson_id:
+            queryset = queryset.filter(test__resource__id=lesson_id, user=self.request.user)
+
+        return queryset
     
-    def post(self, request):
-        user = request.user
-        test_answers = request.data.get("answers", {})
-        lesson_id = request.data.get("lesson")
-        
-        if not lesson_id:
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        if not queryset.exists():
             return Response({
-                "detail": "Dars ID (lesson) ko'rsatilmagan."
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Check if user has already taken this specific lesson's test
-        if TestStatistic.objects.filter(user=user, lesson_id=lesson_id).exists():
-            return Response({
-                "detail": "Siz bu dars testini allaqachon topshirgansiz."
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        correct_count = 0
-        total_tests = len(test_answers)
-        lesson = None
-        
-        for test_id, selected_option in test_answers.items():
-            try:
-                test_id = int(test_id)  # Ensure test_id is an integer
-                test = Test.objects.get(id=test_id)
-                
-                # Verify this test belongs to the specified lesson
-                if test.resource.id != int(lesson_id):
-                    continue
-                    
-                lesson = test.resource
-                is_correct = test.correct_option == selected_option
-                
-                # Create test result
-                TestResult.objects.create(
-                    user=user,
-                    test=test,
-                    selected_option=selected_option,
-                    is_correct=is_correct
-                )
-                
-                if is_correct:
-                    correct_count += 1
-                    
-            except Test.DoesNotExist:
-                continue
-            except ValueError:
-                continue
-        
-        # Save statistics
-        if lesson:
-            test_statistic, created = TestStatistic.objects.get_or_create(
-                user=user, lesson=lesson
-            )
-            test_statistic.total_tests = total_tests
-            test_statistic.correct_answers = correct_count
-            test_statistic.update_percentage()
-            test_statistic.save()
-            
-            percentage = (correct_count / total_tests) * 100 if total_tests > 0 else 0
-            
-            return Response({
-                "message": "Test natijalari saqlandi!",
-                "total_tests": total_tests,
-                "correct_answers": correct_count,
-                "percentage": percentage
+                "detail": "Siz hali bu dars uchun test ishlamagansiz."
             }, status=status.HTTP_200_OK)
-        else:
+            
+        # Calculate overall statistics
+        lesson_id = self.request.query_params.get('lesson_id')
+        try:
+            stat = TestStatistic.objects.get(user=request.user, lesson_id=lesson_id)
+            serializer = TestStatisticSerializer(stat)
+            
+            # Get all answers for this lesson
+            test_results = queryset.select_related('test')
+            answers = {result.test.id: result.selected_option for result in test_results}
+            
+            response_data = serializer.data
+            response_data['answers'] = answers
+            
+            return Response(response_data)
+        except TestStatistic.DoesNotExist:
             return Response({
-                "detail": "Dars topilmadi yoki test javoblari noto'g'ri formatda."
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-
+                "detail": "Siz hali bu dars uchun test ishlamagansiz."
+            }, status=status.HTTP_200_OK)
+    
 class LessonTestResultView(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -90,15 +56,73 @@ class LessonTestResultView(APIView):
         user = request.user
         try:
             stat = TestStatistic.objects.get(user=user, lesson_id=lesson_id)
+            
+            # Get all answers for this lesson
+            test_results = TestResult.objects.filter(
+                user=user,
+                test__resource_id=lesson_id
+            ).select_related('test')
+            
+            answers = {result.test.id: result.selected_option for result in test_results}
+            
+            return Response({
+                "percentage": stat.percentage,
+                "correct_answers": stat.correct_answers,
+                "total_tests": stat.total_tests,
+                "answers": answers
+            }, status=status.HTTP_200_OK)
+        except TestStatistic.DoesNotExist:
+            return Response({
+                "detail": "Siz hali bu dars uchun test ishlamagansiz."
+            }, status=status.HTTP_200_OK)
+
+class SubmitTestView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        lesson_id = request.data.get('lesson')
+        answers = request.data.get('answers', {})
+        
+        if not lesson_id:
+            return Response({"detail": "Dars ID si ko'rsatilmagan"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            lesson = Lessons.objects.get(id=lesson_id)
+        except Lessons.DoesNotExist:
+            return Response({"detail": "Dars topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+            
+        # Delete existing results for this lesson if any
+        TestResult.objects.filter(
+            user=request.user,
+            test__resource_id=lesson_id
+        ).delete()
+        
+        # Save new results
+        for test_id, selected_option in answers.items():
+            try:
+                test = Test.objects.get(id=test_id, resource=lesson)
+                TestResult.objects.create(
+                    user=request.user,
+                    test=test,
+                    selected_option=selected_option
+                )
+            except Test.DoesNotExist:
+                continue  # Skip invalid test IDs
+        
+        # Get the updated statistics
+        try:
+            stat = TestStatistic.objects.get(user=request.user, lesson=lesson)
             return Response({
                 "percentage": stat.percentage,
                 "correct_answers": stat.correct_answers,
                 "total_tests": stat.total_tests
             }, status=status.HTTP_200_OK)
         except TestStatistic.DoesNotExist:
-            return Response({
-                "detail": "Siz hali bu dars uchun test ishlamagansiz."
-            }, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": "Xatolik yuz berdi"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+        
 @api_view(['GET'])
 def ClassesView(request):
     classes = Classes.objects.all()
