@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'authentication',
     'EduResources',
     'simulators',
+    'home',
 ]
 
 MIDDLEWARE = [
