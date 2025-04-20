@@ -61,6 +61,10 @@ class ContactModel(models.Model):
     phone = models.CharField(max_length=20)
     email = models.EmailField()
 
+    class Meta:
+        verbose_name = "Kontakt va ijtimoiy tarmoq"
+        verbose_name_plural = "Kontakt va ijtimoiy tarmoqlar"
+
     def __str__(self):
         return f"{self.phone} - {self.email}"
     
@@ -82,6 +86,10 @@ class ContactMessage(models.Model):
     phone = models.CharField(max_length=20)
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Kontakt xabar"
+        verbose_name_plural = "Kontact xabarlar"
 
     def __str__(self):
         return f"{self.name} - {self.phone}"
