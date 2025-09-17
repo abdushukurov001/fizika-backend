@@ -33,6 +33,7 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 # Application definition
 
 INSTALLED_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -110,6 +111,19 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+JAZZMIN_SETTINGS = {
+    "site_title": "Mening Admin",
+    "site_header": "Mening Sayt Admin",
+    "site_brand": "MyBrand",
+    "welcome_sign": "Xush kelibsiz!",
+    "show_ui_builder": True,  
+    "topmenu_links": [
+        {"name": "Sayt", "url": "/", "new_window": False},
+    ],
+    "custom_css": None,
+}
+
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
@@ -129,7 +143,7 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = 'staticfiles'
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = BASE_DIR / 'media'#os.path.join(BASE_DIR, 'media')
 
 
 # Default primary key field type
@@ -174,6 +188,7 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'abdumannofabdushukurov@gmail.com' 
 EMAIL_HOST_PASSWORD = 'gvka nmjg iimf ijgu'  
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER 
+
 
 
 

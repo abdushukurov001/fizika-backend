@@ -51,7 +51,7 @@ def contactMessage_view(request):
 @api_view(['GET'])
 def contact_view(request):
     data = ContactModel.objects.all()
-    serializer = ContactModelSerializer(data, many=True)
+    serializer = ContactModelSerializer(data, many=True,  context={"request": request})
     return Response(serializer.data, status=200)
 
 

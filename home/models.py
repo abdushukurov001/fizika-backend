@@ -3,7 +3,7 @@ from django.db import models
 
 
 class AboutModel(models.Model):
-    description = models.TextField(max_length=400)
+    description = models.TextField(max_length=1000)
 
     class Meta:
         verbose_name = "Biz haqimizda"
@@ -60,6 +60,7 @@ class UserExperienceModel(models.Model):
 class ContactModel(models.Model):
     phone = models.CharField(max_length=20)
     email = models.EmailField()
+    address = models.CharField(max_length=100)
 
     class Meta:
         verbose_name = "Kontakt va ijtimoiy tarmoq"
