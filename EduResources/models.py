@@ -24,7 +24,7 @@ class Lessons(models.Model):
     lesson = models.CharField(max_length=300, verbose_name="Mavzu nomi")
     title = models.CharField(max_length=200)
     description = models.TextField()
-    videoUrl = models.URLField()
+    videoUrl = models.FileField(upload_to='media/lessons', blank=True)
 
     class Meta:
         verbose_name = "Mavzu"
