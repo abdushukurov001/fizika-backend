@@ -126,7 +126,7 @@ class SubmitTestView(APIView):
 @api_view(['GET'])
 def ClassesView(request):
     classes = Classes.objects.all()
-    serializer = ClassesSerializers(classes, many=True)
+    serializer = ClassesSerializers(classes, many=True, context={'request': request})
     return Response(serializer.data, status=200)
 
 
