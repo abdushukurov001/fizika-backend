@@ -23,8 +23,8 @@ services:
       - ${SERVER_PORT:-8000}:8000
     volumes:
       - ./:/opt/app
-      - static_volume:/opt/app/static
-      - media_volume:/opt/app/media
+      - ./static:/opt/app/static
+      - ./media:/opt/app/media
     networks:
       - dev
 
