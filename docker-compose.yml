@@ -37,6 +37,20 @@ services:
     networks:
       - dev
 
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d:ro
+      - static_volume:/opt/app/static
+      - media_volume:/opt/app/media
+    depends_on:
+      - project
+    networks:
+      - dev
+
 volumes:
   static_volume:
   media_volume:
