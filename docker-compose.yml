@@ -24,6 +24,7 @@ services:
     volumes:
       - ./:/opt/app
       - static_volume:/opt/app/static
+      - media_volume:/opt/app/media
     networks:
       - dev
 
@@ -33,6 +34,20 @@ services:
     image: postgres:15.0-alpine
     volumes:
       - pg_data:/var/lib/postgresql/data:rw
+    networks:
+      - dev
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - static_volume:/opt/app/static
+      - media_volume:/opt/app/media
+    depends_on:
+      - project
     networks:
       - dev
 
