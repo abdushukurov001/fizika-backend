@@ -27,6 +27,20 @@ services:
       - ./media:/opt/app/media
     networks:
       - dev
+  nginx:
+    image: nginx:latest
+    container_name: fizika_nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./media:/opt/app/media
+      - ./static:/opt/app/static
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - project
+    networks:
+      - dev
 
   postgres-db:
     env_file:
