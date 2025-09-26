@@ -3,8 +3,6 @@ from django.contrib.auth.models import User
 from uuid import uuid4
 
 
-
-
 class OTP(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     otp_code = models.PositiveIntegerField()
@@ -19,6 +17,6 @@ class OTP(models.Model):
 
 class PasswordResetToken(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    otp_key = models.CharField(max_length=6, unique=True)
+    otp_key = models.UUIDField(default=uuid4)
     created_at = models.DateTimeField(auto_now_add=True)
 
