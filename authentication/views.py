@@ -2,6 +2,7 @@ from django.shortcuts import render
 import random
 import uuid
 import logging
+from config.settings import EMAIL_HOST_USER
 from django.core.mail import send_mail
 from django.utils.timezone import now, timedelta
 from django.contrib.auth.models import User
@@ -101,7 +102,7 @@ def send_otp_email(receiver_email, otp_code):
         send_mail(
             subject,
             message,
-            "abdumannofabdushukurov@gmail.com",
+            f'{EMAIL_HOST_USER}',
             [receiver_email],
             fail_silently=False,
         )
